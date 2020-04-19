@@ -1,135 +1,145 @@
 <?php
-//  directory creation logic
-if (isset($_GET["create_dir"])) {
-	if ($_GET["create_dir"] != "") {
-		$dir_to_create = './' . $_GET["path"] . $_GET["create_dir"];
-		if (!is_dir($dir_to_create)) mkdir($dir_to_create, 0777, true);
-	}
-	$url = preg_replace("/(&?|\??)create_dir=(.+)?/", "", $_SERVER["REQUEST_URI"]);
-	header('Location: ' . urldecode($url));
-}
+//logout
+if (isset($_GET['logout'])) {
+	session_start();
+	session_unset();
+	session_destroy();
+	session_write_close();
+	setcookie(session_name(),'',0,'/');
+	session_regenerate_id(true);
+	header('location: ./');
+  }
 
-// directory deletion logic
-if (isset($_POST['delete'])) {
-	$objToDelete = './' . $_GET["path"] . $_POST['delete'];
-	$objToDeleteEscaped = str_replace("&nbsp;", " ", htmlentities($objToDelete, null, 'utf-8'));
-	if (is_file($objToDeleteEscaped)) {
-		if (file_exists($objToDeleteEscaped)) {
-			unlink($objToDeleteEscaped);
-		}
+//date
+$today = date("d/m/Y");
+echo $today;
+
+'<br>';
+
+//show path
+print('<h2>GIT HUB directory contents: ' . str_replace('?BIT_PHP_TR=/', ' ', $_SERVER['REQUEST_URI'] . '</h2>'));
+print("<br>");
+
+//create
+$pre_file_name = $_POST['name'];
+switch ($extn) {
+	case "png" : $extn = "PNG Image"; break;
+	case "jpg" : $extn = "JPEG Image"; break;
+	case "svg" : $extn = "SVG Image"; break;
+	case "gif" : $extn = "GIF Image"; break;
+	case "ico" : $extn = "Windows Icon"; break;
+	
+	case "txt" : $extn = "Text File"; break;
+	case "log" : $extn = "Log File"; break;
+	case "htm" : $extn = "HTML File"; break;
+	case "php" : $extn = "PHP Script"; break;
+	case "js" : $extn = "Javascript"; break;
+	case "css" : $extn = "Stylesheet"; break;
+	case "pdf" : $extn = "PDF Document"; break;
+
+	case "zip" : $extn = "ZIP Archive"; break;
+	case "bak" : $extn = "Backup File"; break;
+
+	default : $extn = strtoupper($extn); break;
+}
+$filename = $pre_file_name . $extn;
+fopen($filename, 'w');
+
+
+//upload
+if (isset($_POST['upload'])) {
+	$file_name = $_FILES['file']['name'];
+	$file_type = $_FILES['file']['type'];
+	$file_size - $_FILES['file']['size'];
+	$file_tem_loc = $_FILES['file']['tmp_name'];
+	$file_store = "." . $file_name;
+
+	if (move_uploaded_file($file_tem_loc, $file_store)); {
+		print "";
 	}
 }
 
 //delete
-if(isset($_POST['delete'])){
-	$objToDelete = './' . $_GET["path"] . $_POST['delete']; 
-	$objToDeleteEscaped = str_replace("&nbsp;", " ", htmlentities($objToDelete, null, 'utf-8'));
-	if(is_file($objToDeleteEscaped)){
-		if (file_exists($objToDeleteEscaped)) {
-			unlink($objToDeleteEscaped);
+// $dfile = $_GET['name'];
+// unlink($file);
+// echo "File deleted";
+if (isset($_POST['delete'])) {
+	$deleteObj = './' . $_GET["path"] . $_POST['delete'];
+	$del_obj = str_replace("&nbsp;", " ", htmlentities($deleteObj, null, 'utf-8'));
+	if (is_file($del_obj)) {
+		if (file_exists($del_obj)) {
+			unlink($del_obj);
 		}
 	}
 }
+
+//download
+if (isset($_POST['download'])) {
+	$file = './' . $_POST['download'];
+	$fileToDownload = str_replace("&nbsp;", " ", htmlentities($file, null, 'utf-8'));
+	header('Content-Description: File Transfer');
+	header('Content-Type: application/txt');
+	header('Content-Disposition: attachment; filename=' . basename($fileToDownload));
+	header('Content-Transfer-Encoding: binary');
+	header('Expires: 0');
+	header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+	header('Pragma: public');
+	header('Content-Length: ' . filesize($fileToDownload));
+	flush();
+	readfile($fileToDownload);
+	exit;
+}
+
+$full_path = './' . $_GET["full_path"];
+$files_and_dirs = scandir($full_path);
+
+// List all files and directories
+print('<table><th>Type</th><th>Name</th><th>Actions</th>');
+foreach ($files_and_dirs as $fnd) {
+	if ($fnd != ".." and $fnd != ".") {
+		print('<tr>');
+		// ./.git/logs
+		print('<td>' . (is_dir($full_path . $fnd) ? "Directory" : "File") . '</td>');
+		print('<td>' . (is_dir($full_path . $fnd)
+			? '<a href="' . (isset($_GET['full_path'])
+				? $_SERVER['REQUEST_URI'] . $fnd . '/'
+				: $_SERVER['REQUEST_URI'] . '?full_path=' . $fnd . '/') . '">' . $fnd . '</a>'
+			: $fnd)
+			. '</td>');
+		print('<td>'
+			. (is_dir($full_path . $fnd)
+				? ''
+				: '<form style="display: inline-block" action="" method="post">
+                                <input type="hidden" name="delete" value=' . str_replace(' ', '&nbsp;', $fnd) . '>
+                                <input type="submit" value="Delete">
+                               </form>
+                               <form style="display: inline-block" action="" method="post">
+                                <input type="hidden" name="download" value=' . str_replace(' ', '&nbsp;', $fnd) . '>
+                                <input type="submit" value="Download">
+                               </form>')
+			. "</form></td>");
+		print('</tr>');
+	}
+}
+print("</table>");
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
+<html>
+	<br><br><br>
+<form action="index.php" method="POST">
+	File name: <input type="text" name="name">
+	<input type="submit" value="Create File">		
+</form>
 
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Document</title>
-</head>
+<br><br>
+<form action="?" method="POST" enctype="multipart/form-data">
+	Upload file: 
+	<input type="file" name="file">
+	<input type="submit" name="upload" value="Upload file">
+</form>
+<br><br>
+<button type="submit" name="submit" value="Logout">
+	<a href = "login.php?action=logout"> LOGOUT.</button>
 
-<body>
-	<!-- login FORM  -->
-	<div class="container">
-		<h1>LOGIN</h1>
-		<form method="post" action="">
-			<div class="login-body">
-				<?php
-				if (isset($error)) {
-					echo "<div class='errormsg'>$error</div>";
-				}
-				?>
-				<div class="form-row">
-					<label for="emailaddress">Username:</label>
-					<input type="text" name="username" id="username" placeholder="username" maxlength="100">
-				</div>
-				<div class="form-row">
-					<label for="pass">Password:</label>
-					<input type="password" name="pass" id="pass" placeholder="Password" maxlength="100">
-				</div>
-
-				<div class="login-button-row">
-					<input type="submit" name="login-submit" id="login-submit" value="Login" title="Login now">
-				</div>
-			</div>
-		</form>
-		Click here to <a href="index.php?action=logout">Logout</a>
-	</div>
-	<form action="/BIT_PHP_TR" method="get">
-                <input type="hidden" name="path" value="<?php print($_GET['path']) ?>" /> 
-                <input placeholder="Name of new directory" type="text" id="create_dir" name="create_dir">
-                <button type="submit">Submit</button>
-            </form>
-	<?php
-
-	session_start();
-
-	//login
-	if (isset($_POST['submit'])) {
-		if ((isset($_POST['username']) && $_POST['username'] != '') && (isset($_POST['password']) && $_POST['password'] != '')) {
-			$username = trim($_POST['username']);
-			$password = trim($_POST['password']);
-
-
-			if (password_verify($password, $row['password'])) {
-				$_SESSION['user_id'] = $row['id'];
-				$_SESSION['user_name'] = $row['first_name'];
-				exit;
-			} else {
-				$errorMsg =  "Wrong Username Or Password";
-			}
-		} else {
-			$errorMsg =  "No User Found";
-		}
-	}
-	?>
-	<?php
-
-	// Directory path 
-	print('<h2>GIT HUB directory contents: ' . str_replace('?BIT_PHP_TR=/', ' ', $_SERVER['REQUEST_URI'] . '</h2>'));
-	print("<br><br>");
-
-
-	$dir = "../BIT_PHP_TR/";
-	$file = glob($dir . "*.txt");
-
-	// Open a directory, and read its contents
-
-	if (is_dir($dir)) {
-		if ($dh = opendir($dir)) {
-			while (($file = readdir($dh)) !== false) {
-				print filetype($file) . "  -->  " . $file . "  -->  " . 
-				'<form style="display: inline-block" action="" method="post">
-				<input type="hidden" name="delete" value=' . str_replace(' ', '&nbsp;', $file) . '>
-				<input type="submit" value="Delete">
-			   </form>' . "<br>";
-			}
-			closedir($dh);
-		}
-	}
-
-	// Cookies
-	if (!isset($_COOKIE["Aplanyta_kartu"])) {
-		$kartai = 1;
-	} else {
-		$kartai = $_COOKIE[$kartai] + 1;
-	}
-	setcookie("Aplankyta_kartu", $kartai, time() + 60);
-	?>
-
-</body>
 
 </html>

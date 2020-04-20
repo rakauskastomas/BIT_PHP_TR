@@ -127,6 +127,8 @@ print("</table>");
 <html>
 	<br><br><br>
 <form action="index.php" method="POST">
+	Example: FileName.pdf, FileName.jpg, FileName.txt, etc.
+	<br><br>
 	File name: <input type="text" name="name">
 	<input type="submit" value="Create File">		
 </form>
